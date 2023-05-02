@@ -11,20 +11,21 @@ func SetupRouter() {
 	router := gin.Default()
 	
 	// TODO: Seperate private and public routes with middleware authentication
-	// Capture routes
-	router.GET("/capture/:id", GetCapture)
-	router.POST("/capture", CreateCapture)
-	router.GET("/capture/:id/comments", GetCaptureComments)
+	// TODO: User routes (login, register, me, etc.)
 
-	// Collection routes
-	router.GET("/collection/:id", GetCollection)
-	router.POST("/collection", CreateCollection)
-	router.GET("/collection/:id/captures", GetCollectionCaptures)
-	router.POST("/collection/:id/captures", AddCaptureToCollection)
+	// Capture routes
+	router.GET("/captures/:id", GetCapture)
+	router.POST("/captures", CreateCapture)
 
 	// Comment routes
-	router.GET("/comment/:id", GetComment)
-	router.POST("/comment", CreateComment)
+	router.GET("/captures/:id/comments", GetCaptureComments)
+	router.POST("/captures/:id/comments", CreateComment)
+
+	// Collection routes
+	router.GET("/collections/:id", GetCollection)
+	router.POST("/collections", CreateCollection)
+	router.GET("/collections/:id/captures", GetCollectionCaptures)
+	router.POST("/collections/:id/captures", AddCaptureToCollection)
 
 	router.Run(fmt.Sprintf(":%s", config.Config().ServerPort))
 }

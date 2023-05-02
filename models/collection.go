@@ -4,9 +4,11 @@ import "github.com/lib/pq"
 
 type Collection struct {
 	ID     string `gorm:"primary_key;unique" json:"id"` // Unique Collection ID 
-	Name string `json:"name"` // Name of the collection 
-	Description string `json:"description"` // Description of the collection 
-	Captures pq.StringArray `gorm:"type:text[]" json:"captures"` // Array of capture IDs 
+	Name string `gorm:"not null" json:"name"` // Name of the collection
+	Description string `gorm:"not null" json:"description"` // Description of the collection
+	Captures pq.StringArray `gorm:"type:text[]" json:"captures"` // Array of capture IDs
+	UpdatedAt   int64 `gorm:"autoUpdateTime"` // Unix timestamp of when the collection was last updated
+	CreatedAt   int64 `gorm:"autoCreateTime"` // Unix timestamp of when the collection was created
 }
 
 type CreateCollectionRequest struct {

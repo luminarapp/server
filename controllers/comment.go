@@ -8,7 +8,26 @@ import (
 	"github.com/luminarapp/server/models"
 )
 
-// POST /comment
+// GET /captures/:id/comments
+func GetCaptureComments(c *gin.Context) {
+	var capture models.Capture
+
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
+		return
+	}
+
+	comments, err := models.GetCaptureComments(capture.Comments)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": comments})
+}
+
+// POST /captures/:id/comments
 func CreateComment(c *gin.Context) {
 	var payload models.CreateCommentRequest
 
@@ -17,6 +36,15 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
+	// Check if capture exists
+	var capture models.Capture
+
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
+		return
+	}
+
+	// Create comment
 	comment := models.Comment{
 		ID: shortuuid.New(),
 		Author: payload.Author,
@@ -29,29 +57,10 @@ func CreateComment(c *gin.Context) {
 	}
 
 	// Add comment to capture
-	var capture models.Capture
-
-	if err := models.DB.Where("id = ?", payload.CaptureID).First(&capture).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
-		return
-	}
-
 	capture.Comments = append(capture.Comments, comment.ID)
 
 	if err := models.DB.Save(&capture).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": comment})
-}
-
-// GET /comment/:id
-func GetComment(c *gin.Context) {
-	var comment models.Comment
-
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&comment).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "comment id not found"})
 		return
 	}
 

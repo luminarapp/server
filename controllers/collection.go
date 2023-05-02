@@ -8,7 +8,7 @@ import (
 	"github.com/luminarapp/server/models"
 )
 
-// GET /collection/:id
+// GET /collections/:id
 func GetCollection(c *gin.Context) {
 	var collection models.Collection
 
@@ -20,7 +20,7 @@ func GetCollection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": collection})
 }
 
-// POST /collection
+// POST /collections
 func CreateCollection(c *gin.Context) {
 	var payload models.CreateCollectionRequest
 
@@ -29,6 +29,15 @@ func CreateCollection(c *gin.Context) {
 		return
 	}
 
+	// Check if collection name is already taken
+	var collectionExists models.Collection
+
+	if err := models.DB.Where("name = ?", payload.Name).First(&collectionExists).Error; err == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "collection name already taken"})
+		return
+	}
+
+	// Create collection
 	collection := models.Collection{
 		ID: shortuuid.New(),
 		Name: payload.Name,
@@ -43,7 +52,7 @@ func CreateCollection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": collection})
 }
 
-// GET /collection/:id/captures
+// GET /collections/:id/captures
 func GetCollectionCaptures(c *gin.Context) {
 	var collection models.Collection
 
@@ -62,7 +71,7 @@ func GetCollectionCaptures(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": captures})
 }
 
-// POST /collection/:id/captures
+// POST /collections/:id/captures
 func AddCaptureToCollection(c *gin.Context) {
 	var payload models.AddCaptureToCollectionRequest
 	var collection models.Collection

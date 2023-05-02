@@ -8,7 +8,7 @@ import (
 	"github.com/luminarapp/server/models"
 )
 
-// GET /capture/:id
+// GET /captures/:id
 func GetCapture(c *gin.Context) {
 	var capture models.Capture
 
@@ -20,7 +20,7 @@ func GetCapture(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": capture})
 }
 
-// POST /capture
+// POST /captures
 func CreateCapture(c *gin.Context) {
 	var payload models.CreateCaptureRequest
 
@@ -41,23 +41,4 @@ func CreateCapture(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": capture})
-}
-
-// GET /capture/:id/comments
-func GetCaptureComments(c *gin.Context) {
-	var capture models.Capture
-
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
-		return
-	}
-
-	comments, err := models.GetCaptureComments(capture.Comments)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": comments})
 }
