@@ -66,3 +66,40 @@ func CreateComment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": comment})
 }
+
+// DELETE /captures/:id/comments/:commentId
+func DeleteComment(c *gin.Context) {
+	var capture models.Capture
+
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
+		return
+	}
+
+	var comment models.Comment
+
+	if err := models.DB.Where("id = ?", c.Param("commentId")).First(&comment).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "comment id not found"})
+		return
+	}
+
+	if err := models.DB.Delete(&comment).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Remove comment from capture
+	for i, commentId := range capture.Comments {
+		if commentId == comment.ID {
+			capture.Comments = append(capture.Comments[:i], capture.Comments[i+1:]...)
+			break
+		}
+	}
+
+	if err := models.DB.Save(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": comment})
+}

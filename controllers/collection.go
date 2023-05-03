@@ -52,6 +52,23 @@ func CreateCollection(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": collection})
 }
 
+// DELETE /collections/:id
+func DeleteCollection(c *gin.Context) {
+	var collection models.Collection
+
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&collection).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "collection id not found"})
+		return
+	}
+
+	if err := models.DB.Delete(&collection).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": collection})
+}
+
 // GET /collections/:id/captures
 func GetCollectionCaptures(c *gin.Context) {
 	var collection models.Collection

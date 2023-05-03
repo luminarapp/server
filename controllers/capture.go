@@ -42,3 +42,20 @@ func CreateCapture(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": capture})
 }
+
+// DELETE /captures/:id
+func DeleteCapture(c *gin.Context) {
+	var capture models.Capture
+
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
+		return
+	}
+
+	if err := models.DB.Delete(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": capture})
+}
