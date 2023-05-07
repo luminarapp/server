@@ -5,30 +5,38 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/luminarapp/server/config"
+	"github.com/luminarapp/server/middlewares"
 )
 
 func SetupRouter() {
 	router := gin.Default()
-	
-	// TODO: Seperate private and public routes with middleware authentication
-	// TODO: User routes (login, register, me, etc.)
+
+	protected := router.Group(config.Config().ApiRootPath)
+	protected.Use(middlewares.JwtAuthMiddleware())
 
 	// Capture routes
-	router.GET("/captures/:id", GetCapture)
-	router.POST("/captures", CreateCapture)
-	router.DELETE("/captures/:id", DeleteCapture)
+	protected.GET("/captures", GetUserCaptures)
+	protected.POST("/captures", CreateCapture)
+	protected.GET("/captures/:id", GetCapture)
+	protected.DELETE("/captures/:id", DeleteCapture)
 
 	// Comment routes
-	router.GET("/captures/:id/comments", GetCaptureComments)
-	router.POST("/captures/:id/comments", CreateComment)
-	router.DELETE("/captures/:id/comments/:commentId", DeleteComment)
+	protected.POST("/captures/:id/comments", CreateComment)
+	protected.DELETE("/captures/:id/comments/:commentId", DeleteComment)
 
 	// Collection routes
-	router.GET("/collections/:id", GetCollection)
-	router.POST("/collections", CreateCollection)
-	router.DELETE("/collections/:id", DeleteCollection)
-	router.GET("/collections/:id/captures", GetCollectionCaptures)
-	router.POST("/collections/:id/captures", AddCaptureToCollection)
+	protected.GET("/collections", GetUserCollections)
+	protected.GET("/collections/:id", GetCollection)
+	protected.POST("/collections", CreateCollection)
+	protected.DELETE("/collections/:id", DeleteCollection)
+
+	// User routes
+	protected.GET("/users/me", CurrentUser)
+	router.POST("/users/auth", UserAuthChallenge)
+
+	//! TODO: Remove this route in production
+	router.GET("/users/:id", GetUser)
+	router.POST("/users", CreateUser)
 
 	router.Run(fmt.Sprintf(":%s", config.Config().ServerPort))
 }

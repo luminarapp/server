@@ -5,27 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lithammer/shortuuid/v4"
+	"github.com/luminarapp/server/auth"
 	"github.com/luminarapp/server/models"
 )
-
-// GET /captures/:id/comments
-func GetCaptureComments(c *gin.Context) {
-	var capture models.Capture
-
-	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
-		return
-	}
-
-	comments, err := models.GetCaptureComments(capture.Comments)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": comments})
-}
 
 // POST /captures/:id/comments
 func CreateComment(c *gin.Context) {
@@ -44,10 +26,19 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
+	// Get user
+	userId, err := auth.ExtractTokenID(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Create comment
 	comment := models.Comment{
 		ID: shortuuid.New(),
-		Author: payload.Author,
+		UserID: userId,
+		CaptureID: capture.ID,
 		Body: payload.Body,
 	}
 
@@ -56,19 +47,13 @@ func CreateComment(c *gin.Context) {
 		return
 	}
 
-	// Add comment to capture
-	capture.Comments = append(capture.Comments, comment.ID)
-
-	if err := models.DB.Save(&capture).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
+	// Return comment
 	c.JSON(http.StatusOK, gin.H{"data": comment})
 }
 
 // DELETE /captures/:id/comments/:commentId
 func DeleteComment(c *gin.Context) {
+	// Get capture
 	var capture models.Capture
 
 	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
@@ -76,6 +61,7 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 
+	// Get comment
 	var comment models.Comment
 
 	if err := models.DB.Where("id = ?", c.Param("commentId")).First(&comment).Error; err != nil {
@@ -83,17 +69,23 @@ func DeleteComment(c *gin.Context) {
 		return
 	}
 
-	if err := models.DB.Delete(&comment).Error; err != nil {
+	// Authenticate user
+	userId, err := auth.ExtractTokenID(c)
+
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Remove comment from capture
-	for i, commentId := range capture.Comments {
-		if commentId == comment.ID {
-			capture.Comments = append(capture.Comments[:i], capture.Comments[i+1:]...)
-			break
-		}
+	if comment.UserID != userId {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user is not authorized to delete this comment"})
+		return
+	}
+
+	// Delete comment
+	if err := models.DB.Delete(&comment).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	if err := models.DB.Save(&capture).Error; err != nil {

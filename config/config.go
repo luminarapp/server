@@ -10,7 +10,11 @@ import (
 // Config is the struct that holds all the configuration variables
 type configBuilder struct {
 	DatabasePath string `env:"DB_PATH" envDefault:"./data"`
+	ApiRootPath string `env:"API_ROOT_PATH" envDefault:"/"`
 	ServerPort   string `env:"SERVER_PORT" envDefault:"8080"`
+	ChallengeTokenLifetime int64 `env:"CHALLENGE_TOKEN_LIFETIME" envDefault:"10"`
+	SessionSecret string `env:"SESSION_SECRET"`
+	SessionTokenLifetime int64 `env:"SESSION_TOKEN_LIFETIME" envDefault:"14"`
 }
 
 // BuildConfig builds the configuration variables
@@ -21,7 +25,7 @@ func Build() configBuilder {
 		log.Fatalf("Error loading %s file", dotenvFile)
 	}
 
-	// Create a new configuration variable
+	// Create a new configuration variable struct
 	var config configBuilder
 
 	// Parse the configuration variables

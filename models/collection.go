@@ -1,14 +1,13 @@
 package models
 
-import "github.com/lib/pq"
-
 type Collection struct {
-	ID     string `gorm:"primary_key;unique" json:"id"` // Unique Collection ID 
+	ID     string `gorm:"primary_key;unique" json:"id"` // Unique Collection ID
+	UserID string `gorm:"not null" json:"user_id"` // User ID of the user that created the collection
 	Name string `gorm:"not null" json:"name"` // Name of the collection
 	Description string `gorm:"not null" json:"description"` // Description of the collection
-	Captures pq.StringArray `gorm:"type:text[]" json:"captures"` // Array of capture IDs
-	UpdatedAt   int64 `gorm:"autoUpdateTime"` // Unix timestamp of when the collection was last updated
-	CreatedAt   int64 `gorm:"autoCreateTime"` // Unix timestamp of when the collection was created
+	Captures []Capture `gorm:"foreignKey:CollectionID;default:'{}'" json:"captures"` // Array of captures
+	UpdatedAt   int64 `gorm:"autoUpdateTime" json:"updated_at"` // Unix timestamp of when the user was last updated
+	CreatedAt   int64 `gorm:"autoCreateTime" json:"created_at"` // Unix timestamp of when the user was created
 }
 
 type CreateCollectionRequest struct {
@@ -16,17 +15,14 @@ type CreateCollectionRequest struct {
 	Description string `json:"description"` 
 }
 
-type AddCaptureToCollectionRequest struct {
-	CaptureID string `json:"captureId" binding:"required"`
-}
+// Get collections by user ID
+func GetCollectionsByUserId(id string) ([]Collection, error) {
+	var collections []Collection
 
-// Get captures by array of IDs
-func GetCollectionCaptures(ids []string) ([]Capture, error) {
-	var captures []Capture
-
-	if err := DB.Where("id IN (?)", ids).Find(&captures).Error; err != nil {
+	// Dont preload as used for user collections router which doesnt need captures
+	if err := DB.Where("user_id = ?", id).Find(&collections).Error; err != nil {
 		return nil, err
 	}
 
-	return captures, nil
+	return collections, nil
 }
