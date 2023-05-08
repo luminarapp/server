@@ -34,9 +34,5 @@ func SetupRouter() {
 	protected.GET("/users/me", CurrentUser)
 	router.POST("/users/auth", UserAuthChallenge)
 
-	//! TODO: Remove this route in production
-	router.GET("/users/:id", GetUser)
-	router.POST("/users", CreateUser)
-
 	router.Run(fmt.Sprintf(":%s", config.Config().ServerPort))
 }

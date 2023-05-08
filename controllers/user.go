@@ -33,43 +33,6 @@ func CurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
-// GET /users/:id
-func GetUser(c *gin.Context) {
-	var user models.User
-
-	// Preload captures and collections
-	if err := models.DB.Preload("Captures").Preload("Collections").Where("id = ?", c.Param("id")).First(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user id not found"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": user})
-}
-
-// POST /users
-func CreateUser(c *gin.Context) {
-	var payload models.CreateUserRequest
-
-	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	user := models.User{
-		ID: shortuuid.New(),
-		Email: payload.Email,
-	}
-
-	if err := models.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-
-	
-	c.JSON(http.StatusOK, gin.H{"data": user})
-}
-
 // POST /users/auth
 func UserAuthChallenge(c *gin.Context) {
 	var payload models.UserAuthChallengeRequest
