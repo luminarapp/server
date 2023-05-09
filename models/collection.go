@@ -15,6 +15,11 @@ type CreateCollectionRequest struct {
 	Description string `json:"description"` 
 }
 
+type UpdateCollectionRequest struct {
+	Name string `json:"name"`
+	Description string `json:"description"`
+}
+
 // Get collections by user ID
 func GetCollectionsByUserId(id string) ([]Collection, error) {
 	var collections []Collection

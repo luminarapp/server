@@ -33,7 +33,45 @@ func CurrentUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
+// PATCH /users/me
+func UpdateCurrentUser(c *gin.Context) {
+	var payload models.UpdateUserRequest
+
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get user
+	userId, err := auth.ExtractTokenID(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Make sure user exists
+	var user models.User
+
+	if err := models.DB.Where("id = ?", userId).First(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Update user
+	if err := models.DB.Model(&user).Updates(models.User{
+		Username: payload.Username,
+	}).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": user})
+}
+
 // POST /users/auth
+// TODO: Refactor this function to be more readable and move evtl. to new file or auth package
+// Also consider adding new route for the submission - /users/auth/submit or verify
 func UserAuthChallenge(c *gin.Context) {
 	var payload models.UserAuthChallengeRequest
 

@@ -60,12 +60,19 @@ func CreateCapture(c *gin.Context) {
 		return
 	}
 
-	// Check if collection exists
-	var collection models.Collection
+	// Check if collection exists and belongs to user (if collection id is provided)
+	if payload.CollectionID != "" {
+		var collection models.Collection
 
-	if err := models.DB.Where("id = ?", payload.CollectionID).First(&collection).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "collection id not found"})
-		return
+		if err := models.DB.Where("id = ?", payload.CollectionID).First(&collection).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "collection id not found"})
+			return
+		}
+
+		if collection.UserID != userId {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user not allowed to add capture to collection"})
+			return
+		}
 	}
 
 	// Create capture
@@ -102,7 +109,7 @@ func DeleteCapture(c *gin.Context) {
 	}
 
 	if capture.UserID != userId {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "use not allowed to delete capture"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user not allowed to delete capture"})
 		return
 	}
 
@@ -116,4 +123,58 @@ func DeleteCapture(c *gin.Context) {
 }
 
 // PATCH /captures/:id
-// TODO
+func UpdateCapture(c *gin.Context) {
+    var payload models.UpdateCaptureRequest
+    var capture models.Capture
+
+    if err := c.ShouldBindJSON(&payload); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Check if capture exists
+    if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
+        return
+    }
+
+    // Authenticate user
+    userId, err := auth.ExtractTokenID(c)
+
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    if capture.UserID != userId {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "user not allowed to update capture"})
+        return
+    }
+
+	// Validate collection id
+	if payload.CollectionID != "" {
+		var collection models.Collection
+
+		if err := models.DB.Where("id = ?", payload.CollectionID).First(&collection).Error; err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "collection id not found"})
+			return
+		}
+
+		if collection.UserID != userId {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user not allowed to add capture to collection"})
+			return
+		}
+	}
+
+    // Update capture
+    updates := map[string]interface{}{
+        "collection_id": payload.CollectionID,
+    }
+
+    if err := models.DB.Model(&capture).Updates(updates).Error; err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": capture})
+}

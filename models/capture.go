@@ -17,6 +17,10 @@ type CreateCaptureRequest struct {
 	CollectionID string `json:"collection_id"`
 }
 
+type UpdateCaptureRequest struct {
+	CollectionID string `json:"collection_id"` // Empty string to remove collection
+}
+
 // GetCapturesByUserId gets captures by user ID
 func GetCapturesByUserId(id string) ([]Capture, error) {
 	var captures []Capture

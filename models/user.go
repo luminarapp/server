@@ -2,8 +2,8 @@ package models
 
 type User struct {
 	ID     string `gorm:"primary_key;unique" json:"id"` // Unique User ID
-	Username   string `json:"username"` // Username of the user
-	Email  string `json:"email"` // Email of the user
+	Username   string `gorm:"not null" json:"username"` // Username of the user
+	Email  string `gorm:"not null;unique" json:"email"` // Email of the user
 	Collections []Collection `gorm:"foreignKey:UserID;default:'{}'" json:"-"` // Array of collections 
 	Captures []Capture `gorm:"foreignKey:UserID;default:'{}'" json:"-"` // Array of captures
 	AuthToken AuthToken `gorm:"embedded" json:"-"` // Auth token of the user
@@ -13,6 +13,10 @@ type User struct {
 
 type CreateUserRequest struct {
 	Email string `json:"email" binding:"required"`
+}
+
+type UpdateUserRequest struct {
+	Username string `json:"username"`
 }
 
 type AuthToken struct {

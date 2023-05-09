@@ -95,3 +95,56 @@ func DeleteComment(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": comment})
 }
+
+// PATCH /captures/:id/comments/:commentId
+func UpdateComment(c *gin.Context) {
+	var payload models.UpdateCommentRequest
+	var comment models.Comment
+
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get capture
+	var capture models.Capture
+
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "capture id not found"})
+		return
+	}
+
+	// Get comment
+	if err := models.DB.Where("id = ?", c.Param("commentId")).First(&comment).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "comment id not found"})
+		return
+	}
+
+	// Authenticate user
+	userId, err := auth.ExtractTokenID(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if comment.UserID != userId {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user is not authorized to update this comment"})
+		return
+	}
+
+	// Update comment
+	if err := models.DB.Model(&comment).Updates(models.Comment{
+		Body: payload.Body,
+	}).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := models.DB.Save(&capture).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": comment})
+}

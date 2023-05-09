@@ -120,3 +120,44 @@ func DeleteCollection(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": collection})
 }
+
+// PATCH /collections/:id
+func UpdateCollection(c *gin.Context) {
+	var collection models.Collection
+	var payload models.UpdateCollectionRequest
+
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Get collection
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&collection).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "collection id not found"})
+		return
+	}
+
+	// Authenticate user
+	userId, err := auth.ExtractTokenID(c)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if collection.UserID != userId {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user is missing permissions to update collection"})
+		return
+	}
+
+	// Update collection
+	if err := models.DB.Model(&collection).Updates(models.Collection{
+		Name: payload.Name,
+		Description: payload.Description,
+	}).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": collection})
+}
